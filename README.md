@@ -22,7 +22,7 @@ sha256.Sum256([]byte(password)), при проверке пароля вычис
   1) в качестве ключа шифрования key используем sha256 хэш пароля, получаем cipher.Block
    ###### block, err := aes.NewCipher(key)
   2) Создаем GCM режим шифрования
-   ###### aesGCM, err := cipher.NewGCM(block)
+   ###### aesgcm, err := cipher.NewGCM(block)
   3) создаём вектор инициализации из последних aesgcm.NonceSize() байт ключа
    ###### iv := key[len(key)-aesgcm.NonceSize():]
   4) зашифровываем, в этом виде будем сохранять в бд
