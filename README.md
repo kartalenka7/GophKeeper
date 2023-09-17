@@ -12,3 +12,11 @@
 БД PostgreSQL
 
 ![image](https://github.com/kartalenka7/GophKeeper/assets/113780951/b54c1cae-d164-445c-bb84-389c2a5db9f6)
+
+### Протокол взаимодействия клиента и сервера
+
+протокол gRPC
+
+![image](https://github.com/kartalenka7/GophKeeper/assets/113780951/95913d97-0fb1-488d-a954-b3a71d1e1041)
+
+
