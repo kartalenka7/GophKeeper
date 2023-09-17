@@ -17,6 +17,7 @@
 
 протокол gRPC
 
-![image](https://github.com/kartalenka7/GophKeeper/assets/113780951/95913d97-0fb1-488d-a954-b3a71d1e1041)
+![Диаграмма классов (9)](https://github.com/kartalenka7/GophKeeper/assets/113780951/d4a29544-b45d-4a35-870b-1a62ce3b1c9a)
+
 
 
