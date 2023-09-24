@@ -33,3 +33,4 @@ sha256.Sum256([]byte(password)), при проверке пароля вычис
 протокол gRPC
 
 ![Диаграмма классов (10)](https://github.com/kartalenka7/GophKeeper/assets/113780951/06617c31-8fc8-4dff-b342-6b0fbca96467)
+
