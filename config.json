@@ -1,0 +1,3 @@
+{
+    "database_conn": "user=habruser password=habr host=localhost port=5432 dbname=habrdb sslmode=disable"
+}

@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package dataservice;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "proto/dataservice";
+
+message AddingRequest {
+    string dataKeyWord = 1;
+    string dataType    = 2;
+    string data        = 3;
+    string metaData    = 4;
+}
+
+message GetRequest {
+    string dataKeyWord = 1;
+}
+
+message GetResponse {
+    string dataKeyWord = 1;
+    string dataType    = 2;
+    string data        = 3;
+    string metaData    = 4;
+}
+
+message ChangingRequest {
+    string dataKeyWord       = 1;
+    string dataForChange     = 2;
+    string metaDataForChange = 3;
+}
+
+message DeletionRequest {
+    string dataKeyWord = 1;
+}
+
+service DataService {
+    rpc AddData(AddingRequest) returns (google.protobuf.Empty);
+    rpc GetData(GetRequest) returns (GetResponse);
+    rpc ChangeData(ChangingRequest) returns (google.protobuf.Empty);
+    rpc DeleteData(DeletionRequest) returns (google.protobuf.Empty);
+}
