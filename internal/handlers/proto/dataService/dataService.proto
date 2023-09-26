@@ -24,6 +24,10 @@ message GetResponse {
     string metaData    = 4;
 }
 
+message GetResponseList {
+    repeated GetResponse response = 1;
+}
+
 message ChangingRequest {
     string dataKeyWord       = 1;
     string dataForChange     = 2;
@@ -36,7 +40,7 @@ message DeletionRequest {
 
 service DataService {
     rpc AddData(AddingRequest) returns (google.protobuf.Empty);
-    rpc GetData(GetRequest) returns (GetResponse);
+    rpc GetData(GetRequest) returns (GetResponseList);
     rpc ChangeData(ChangingRequest) returns (google.protobuf.Empty);
     rpc DeleteData(DeletionRequest) returns (google.protobuf.Empty);
 }

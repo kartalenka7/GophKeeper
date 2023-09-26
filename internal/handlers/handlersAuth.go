@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	auth "keeper/internal/handlers/proto/authService"
+	"keeper/internal/model"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -14,6 +15,10 @@ import (
 type Service interface {
 	UserRegister(ctx context.Context, login string, password string) (string, error)
 	UserAuthentification(ctx context.Context, login string, password string) (string, error)
+	AddData(ctx context.Context, data model.DataBlock) error
+	GetData(ctx context.Context, login string, dataKeyWord string) ([]model.DataBlock, error)
+	ChangeData(ctx context.Context, dataForChange model.DataBlock) error
+	DeleteData(ctx context.Context, login string, dataKeyWord string) error
 }
 
 // HandlerAuth реализует методы-хэндлеры регистрации
@@ -56,7 +61,7 @@ func (h HandlersAuth) UserAuth(ctx context.Context, in *auth.AuthRequest) (
 	if err != nil {
 		return &emptypb.Empty{}, status.Errorf(codes.Internal, "error in user authentification")
 	}
-	
+
 	md := metadata.Pairs("authorization", jwtString)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 

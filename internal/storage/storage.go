@@ -25,6 +25,24 @@ var (
 					    );`
 	insertUser     = `INSERT INTO users(login, password) VALUES($1, $2)`
 	selectPassword = `SELECT password FROM users WHERE login = $1`
+
+	createDataTable = `CREATE TABLE IF NOT EXISTS dataTable(
+						login TEXT,
+						dataKeyWord TEXT,
+						dataType TEXT,
+						data BYTEA,
+						metadata TEXT,
+						CONSTRAINT fk_login FOREIGN KEY (login) REFERENCES users(login),
+       				    CONSTRAINT search_index UNIQUE (login, dataKeyWord)  
+						)`
+	insertData = `INSERT INTO dataTable(login, dataKeyWord, dataType, data, metadata)
+				  VALUES($1, $2, $3, $4, $5)`
+	selectData = `SELECT dataKeyWord, dataType, data, metadata 
+				  FROM dataTable
+				  WHERE login = $1 AND dataKeyWord = $2`
+	updateData = `UPDATE dataTable SET data = $1, meatadata = $2
+				  WHERE login = $1 AND dataKeyWord = $2`
+	deleteData = `DELETE FROM dataTable WHERE login = $1 AND dataKeyWord = $2`
 )
 
 // NewStorage инициализирует пул соединений с базой данных
@@ -55,7 +73,10 @@ func NewStorage(ctx context.Context, log *logrus.Logger,
 
 // InitTable создает таблицы в бд, если они не существуют
 func InitTable(ctx context.Context, pool *pgxpool.Pool) error {
-	_, err := pool.Exec(ctx, createUsersTable)
+	if _, err := pool.Exec(ctx, createUsersTable); err != nil {
+		return err
+	}
+	_, err := pool.Exec(ctx, createDataTable)
 	return err
 }
 
@@ -93,4 +114,59 @@ func (s *storage) CheckUserAuth(ctx context.Context, login string,
 		return err
 	}
 	return nil
+}
+
+// InsertData добавляет данные пользователя в бд
+func (s *storage) InsertData(ctx context.Context, data model.DataBlock) error {
+	_, err := s.pgxPool.Exec(ctx, insertData, data.Login, data.DataKeyWord,
+		data.DataType, data.CipherData, data.MetaData)
+	if err != nil {
+		s.log.Error(err.Error())
+	}
+	return err
+}
+
+// GetData выбирает данные пользователя по ключу логин + ключевое слово
+func (s *storage) GetData(ctx context.Context, login string,
+	dataKeyWord string) ([]model.DataBlock, error) {
+	rows, err := s.pgxPool.Query(ctx, selectData, login, dataKeyWord)
+	defer rows.Close()
+	if err != nil {
+		s.log.Error(err.Error())
+		return nil, err
+	}
+
+	var dataBlock model.DataBlock
+	var data []model.DataBlock
+	for rows.Next() {
+		err := rows.Scan(&dataBlock.DataKeyWord, &dataBlock.DataType, &dataBlock.Data, &dataBlock.MetaData)
+		if err != nil {
+			s.log.Error(err.Error())
+			return nil, err
+		}
+		data = append(data, dataBlock)
+	}
+	if rows.Err() != nil {
+		s.log.Error(err.Error())
+		return nil, err
+	}
+	return data, nil
+}
+
+// ChangeData запускает UPDATE на данные пользователя
+func (s *storage) ChangeData(ctx context.Context, data model.DataBlock) error {
+	_, err := s.pgxPool.Exec(ctx, insertData, data.Login, data.DataKeyWord,
+		data.DataType, data.CipherData, data.MetaData)
+	if err != nil {
+		s.log.Error(err.Error())
+	}
+	return nil
+}
+
+func (s *storage) DeleteData(ctx context.Context, login string, dataKeyWord string) error {
+	return nil
+}
+
+func (s *storage) Close() {
+	s.pgxPool.Close()
 }

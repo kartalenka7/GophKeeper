@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+	"keeper/internal/model"
 	"keeper/internal/utils"
 
 	"github.com/sirupsen/logrus"
@@ -15,19 +16,25 @@ import (
 type Storer interface {
 	AddUser(ctx context.Context, login string, password [32]byte) error
 	CheckUserAuth(ctx context.Context, login string, password string) error
+	InsertData(ctx context.Context, data model.DataBlock) error
+	GetData(ctx context.Context, login string, dataKeyWord string) ([]model.DataBlock, error)
+	ChangeData(ctx context.Context, data model.DataBlock) error
+	DeleteData(ctx context.Context, login string, dataKeyWord string) error
 }
 
 // service - структура, реализующая методы пакета service
 type service struct {
 	storage Storer
 	log     *logrus.Logger
+	config  model.Config
 }
 
 func NewService(ctx context.Context, storage Storer,
-	log *logrus.Logger) *service {
+	log *logrus.Logger, cfg model.Config) *service {
 	return &service{
 		storage: storage,
 		log:     log,
+		config:  cfg,
 	}
 }
 
@@ -42,7 +49,7 @@ func (s *service) UserRegister(ctx context.Context, login string,
 		return "", err
 	}
 
-	jwtString, err := utils.GenerateJWTToken(login, s.log)
+	jwtString, err := utils.GenerateJWTToken(login, s.log, s.config.SecretPassword)
 	if err != nil {
 		return "", err
 	}
@@ -58,10 +65,42 @@ func (s *service) UserAuthentification(ctx context.Context, login string,
 		return "", err
 	}
 
-	jwtString, err := utils.GenerateJWTToken(login, s.log)
+	jwtString, err := utils.GenerateJWTToken(login, s.log, s.config.SecretPassword)
 	if err != nil {
 		return "", err
 	}
 
 	return jwtString, nil
+}
+
+// AddData шифрует данные и отправляет их в storage
+func (s *service) AddData(ctx context.Context, data model.DataBlock) error {
+	cipherData, err := utils.GCMDataCipher(data.Data, s.config.SecretPassword, s.log)
+	if err != nil {
+		return err
+	}
+	data.CipherData = cipherData
+	err = s.storage.InsertData(ctx, data)
+	return err
+}
+
+// GetData возвращает данные пользователя
+func (s *service) GetData(ctx context.Context, login string,
+	dataKeyWord string) ([]model.DataBlock, error) {
+	return s.storage.GetData(ctx, login, dataKeyWord)
+}
+
+// ChangeData шифрует новые данные и отправляет их в storage
+func (s *service) ChangeData(ctx context.Context, dataForChange model.DataBlock) error {
+	cipherData, err := utils.GCMDataCipher(dataForChange.Data, s.config.SecretPassword, s.log)
+	if err != nil {
+		return err
+	}
+	dataForChange.CipherData = cipherData
+
+	return s.storage.ChangeData(ctx, dataForChange)
+}
+
+func (s *service) DeleteData(ctx context.Context, login string, dataKeyWord string) error {
+	return s.storage.DeleteData(ctx, login, dataKeyWord)
 }

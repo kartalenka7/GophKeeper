@@ -10,9 +10,12 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
-	auth "keeper/internal/handlers/proto/authService"
+	authService "keeper/internal/handlers/proto/authService"
 	data "keeper/internal/handlers/proto/dataService"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 )
 
 func main() {
@@ -31,7 +34,7 @@ func main() {
 		return
 	}
 
-	service := service.NewService(ctx, storage, log)
+	service := service.NewService(ctx, storage, log, config)
 
 	// Запускаем сервер авторизации пользователей
 	lisAuth, err := net.Listen("tcp", ":9090")
@@ -39,7 +42,7 @@ func main() {
 		return
 	}
 	serverAuth := grpc.NewServer()
-	auth.RegisterAuthServiceServer(serverAuth, handlers.NewHandlersAuth(
+	authService.RegisterAuthServiceServer(serverAuth, handlers.NewHandlersAuth(
 		service, log))
 	serverAuth.Serve(lisAuth)
 
@@ -48,7 +51,10 @@ func main() {
 	if err != nil {
 		return
 	}
-	serverData := grpc.NewServer()
+	serverData := grpc.NewServer(
+		grpc.UnaryInterceptor(auth.UnaryServerInterceptor(data.AuthInterceptor)),
+	)
+	reflection.Register(serverData)
 	data.RegisterDataServiceServer(serverData, handlers.NewHandlersData(service, log))
 	serverAuth.Serve(lisData)
 }

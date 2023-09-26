@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"keeper/internal/model"
 	"os"
 
@@ -21,6 +22,14 @@ func GetConfig(log *logrus.Logger) (model.Config, error) {
 	if err != nil {
 		log.Error(err.Error())
 	}
+
+	goprivate, exist := os.LookupEnv("GOPRIVATE")
+
+	if !exist || goprivate == "" {
+		err := errors.New("Заполните переменную среды GOPRIVATE")
+		return model.Config{}, err
+	}
+	config.SecretPassword = goprivate
 	return config, err
 }
 
