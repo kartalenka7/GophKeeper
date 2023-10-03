@@ -5,10 +5,11 @@ package service
 import (
 	"context"
 	"keeper/internal/logger"
-	"keeper/internal/service/mocks"
+	"keeper/internal/server/service/mocks"
 	"keeper/internal/utils"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,9 +30,9 @@ func TestUserRegister(t *testing.T) {
 			name: "Успешная регистрация",
 			s: &service{
 				storage: mockStorage,
-				log:     logger.InitLog(),
+				log:     logger.InitLog(logrus.InfoLevel),
 			},
-			login:    "user1",
+			login:    "user8",
 			password: "123456",
 			wantErr:  false,
 		},
@@ -68,7 +69,7 @@ func TestUserAuthentification(t *testing.T) {
 			name: "Успешная аутентификация",
 			s: &service{
 				storage: mockStorage,
-				log:     logger.InitLog(),
+				log:     logger.InitLog(logrus.InfoLevel),
 			},
 			login:    "user1",
 			password: "123456",

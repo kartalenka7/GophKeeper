@@ -30,5 +30,6 @@ type DataBlock struct {
 
 var (
 	ErrLoginNotFound = errors.New("Login not found")
+	ErrTokenNotFound = errors.New("Token not found")
 	ErrNotValidToken = errors.New("Not valid token")
 )

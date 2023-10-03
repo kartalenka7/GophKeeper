@@ -10,11 +10,12 @@ import (
 )
 
 // InitLog - инициализирует логгер
-func InitLog() *logrus.Logger {
+func InitLog(level logrus.Level) *logrus.Logger {
 	log := logrus.New()
 	// Включаем отслеживание вызывающего кода,
 	// чтобы записывать информацию о местоположении вызовов функций.
 	log.SetReportCaller(true)
+	log.SetLevel(level)
 	log.Out = os.Stdout
 	log.Formatter = &logrus.TextFormatter{
 		CallerPrettyfier: func(frame *runtime.Frame) (function string, file string) {

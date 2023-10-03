@@ -2,23 +2,21 @@ package handlers
 
 import (
 	"context"
-	auth "keeper/internal/handlers/proto/authService"
 	"keeper/internal/model"
+	auth "keeper/internal/server/handlers/proto/authService"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Service interface {
 	UserRegister(ctx context.Context, login string, password string) (string, error)
 	UserAuthentification(ctx context.Context, login string, password string) (string, error)
 	AddData(ctx context.Context, data model.DataBlock) error
-	GetData(ctx context.Context, login string, dataKeyWord string) ([]model.DataBlock, error)
+	GetData(ctx context.Context, dataKeyWord string) ([]model.DataBlock, error)
 	ChangeData(ctx context.Context, dataForChange model.DataBlock) error
-	DeleteData(ctx context.Context, login string, dataKeyWord string) error
+	DeleteData(ctx context.Context, dataKeyWord string) error
 }
 
 // HandlerAuth реализует методы-хэндлеры регистрации
@@ -40,30 +38,28 @@ func NewHandlersAuth(service Service, log *logrus.Logger) *HandlersAuth {
 
 // UserRegister - хэндлер для регистрации пользователя
 func (h HandlersAuth) UserRegister(ctx context.Context, in *auth.RegisterRequest) (
-	*emptypb.Empty, error) {
+	*auth.RegisterResponse, error) {
+	var response auth.RegisterResponse
 
 	jwtString, err := h.service.UserRegister(ctx, in.Login, in.Password)
 	if err != nil {
-		return &emptypb.Empty{}, status.Errorf(codes.Internal, "error in user registration")
+		return nil, status.Errorf(codes.Internal, "error in user registration")
 	}
 
-	md := metadata.Pairs("authorization", jwtString)
-	ctx = metadata.NewOutgoingContext(ctx, md)
+	response.JwtToken = jwtString
 
-	return &emptypb.Empty{}, nil
+	return &response, nil
 }
 
 // UserAuth - хэндлер для аутентификации пользователя
 func (h HandlersAuth) UserAuth(ctx context.Context, in *auth.AuthRequest) (
-	*emptypb.Empty, error) {
-
+	*auth.AuthResponse, error) {
+	var response auth.AuthResponse
+	h.log.Info("Хэндлер для аутентификации пользователя")
 	jwtString, err := h.service.UserAuthentification(ctx, in.Login, in.Password)
 	if err != nil {
-		return &emptypb.Empty{}, status.Errorf(codes.Internal, "error in user authentification")
+		return nil, status.Errorf(codes.Internal, "error in user authentification")
 	}
-
-	md := metadata.Pairs("authorization", jwtString)
-	ctx = metadata.NewOutgoingContext(ctx, md)
-
-	return &emptypb.Empty{}, nil
+	response.JwtToken = jwtString
+	return &response, nil
 }

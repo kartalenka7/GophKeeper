@@ -80,14 +80,44 @@ func (s *service) AddData(ctx context.Context, data model.DataBlock) error {
 		return err
 	}
 	data.CipherData = cipherData
+
+	login, err := utils.GetLoginFromContext(ctx, s.config.SecretPassword)
+	if err != nil {
+		return err
+	}
+
+	data.Login = login
 	err = s.storage.InsertData(ctx, data)
 	return err
 }
 
 // GetData возвращает данные пользователя
-func (s *service) GetData(ctx context.Context, login string,
+func (s *service) GetData(ctx context.Context,
 	dataKeyWord string) ([]model.DataBlock, error) {
-	return s.storage.GetData(ctx, login, dataKeyWord)
+
+	login, err := utils.GetLoginFromContext(ctx, s.config.SecretPassword)
+	if err != nil {
+		return nil, err
+	}
+	data, err := s.storage.GetData(ctx, login, dataKeyWord)
+	if err != nil {
+		return nil, err
+	}
+	var dataReturn []model.DataBlock
+	for _, dataLine := range data {
+		dataDecipher, err := utils.GCMDataDecipher(dataLine.CipherData, s.config.SecretPassword,
+			s.log)
+		if err != nil {
+			return nil, err
+		}
+
+		dataReturn = append(dataReturn, model.DataBlock{
+			DataKeyWord: dataLine.DataKeyWord,
+			Data:        dataDecipher,
+			MetaData:    dataLine.MetaData,
+		})
+	}
+	return dataReturn, err
 }
 
 // ChangeData шифрует новые данные и отправляет их в storage
@@ -98,9 +128,21 @@ func (s *service) ChangeData(ctx context.Context, dataForChange model.DataBlock)
 	}
 	dataForChange.CipherData = cipherData
 
+	login, err := utils.GetLoginFromContext(ctx, s.config.SecretPassword)
+	if err != nil {
+		return err
+	}
+
+	dataForChange.Login = login
 	return s.storage.ChangeData(ctx, dataForChange)
 }
 
-func (s *service) DeleteData(ctx context.Context, login string, dataKeyWord string) error {
+func (s *service) DeleteData(ctx context.Context, dataKeyWord string) error {
+
+	login, err := utils.GetLoginFromContext(ctx, s.config.SecretPassword)
+	if err != nil {
+		return err
+	}
+
 	return s.storage.DeleteData(ctx, login, dataKeyWord)
 }

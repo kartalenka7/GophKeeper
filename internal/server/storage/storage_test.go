@@ -7,6 +7,7 @@ import (
 	"keeper/internal/utils"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +21,7 @@ func TestStorageAddUser(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name:     "Успешное добавление пользователя",
-			login:    "user5",
+			login:    "user7",
 			password: "123456",
 			wantErr:  false,
 		},
@@ -75,7 +76,7 @@ func TestStorageCheckUserAuth(t *testing.T) {
 
 func initStorage(t *testing.T) (context.Context, *storage) {
 	ctx := context.Background()
-	log := logger.InitLog()
+	log := logger.InitLog(logrus.InfoLevel)
 	config, err := config.GetConfig(log)
 	require.NoError(t, err)
 	s, err := NewStorage(ctx, log, config)

@@ -64,6 +64,7 @@ func NewStorage(ctx context.Context, log *logrus.Logger,
 		log.Error(err.Error())
 		return nil, err
 	}
+	log.Info("Запустили соединение с Postgres, инициализировали таблицы")
 
 	return &storage{
 		pgxPool: pool,
@@ -98,6 +99,7 @@ func (s *storage) AddUser(ctx context.Context, login string,
 // CheckUserAuth проверяет логин и хэш пароля пользователя по таблице users
 func (s *storage) CheckUserAuth(ctx context.Context, login string,
 	password string) error {
+	s.log.Debug("Проверяем наличие пользователя в бд")
 	var hashPassword []byte
 
 	row := s.pgxPool.QueryRow(ctx, selectPassword, login)
@@ -113,11 +115,13 @@ func (s *storage) CheckUserAuth(ctx context.Context, login string,
 		s.log.Error(err.Error())
 		return err
 	}
+	s.log.Debug("Аутентификация успешна")
 	return nil
 }
 
 // InsertData добавляет данные пользователя в бд
 func (s *storage) InsertData(ctx context.Context, data model.DataBlock) error {
+	s.log.Debug("Вставляем строку с данными в таблицу dataTable")
 	_, err := s.pgxPool.Exec(ctx, insertData, data.Login, data.DataKeyWord,
 		data.DataType, data.CipherData, data.MetaData)
 	if err != nil {
@@ -129,6 +133,7 @@ func (s *storage) InsertData(ctx context.Context, data model.DataBlock) error {
 // GetData выбирает данные пользователя по ключу логин + ключевое слово
 func (s *storage) GetData(ctx context.Context, login string,
 	dataKeyWord string) ([]model.DataBlock, error) {
+
 	rows, err := s.pgxPool.Query(ctx, selectData, login, dataKeyWord)
 	defer rows.Close()
 	if err != nil {
@@ -139,7 +144,7 @@ func (s *storage) GetData(ctx context.Context, login string,
 	var dataBlock model.DataBlock
 	var data []model.DataBlock
 	for rows.Next() {
-		err := rows.Scan(&dataBlock.DataKeyWord, &dataBlock.DataType, &dataBlock.Data, &dataBlock.MetaData)
+		err := rows.Scan(&dataBlock.DataKeyWord, &dataBlock.DataType, &dataBlock.CipherData, &dataBlock.MetaData)
 		if err != nil {
 			s.log.Error(err.Error())
 			return nil, err
@@ -150,6 +155,7 @@ func (s *storage) GetData(ctx context.Context, login string,
 		s.log.Error(err.Error())
 		return nil, err
 	}
+	s.log.Debug("Данные успешно выбраны")
 	return data, nil
 }
 
@@ -160,11 +166,15 @@ func (s *storage) ChangeData(ctx context.Context, data model.DataBlock) error {
 	if err != nil {
 		s.log.Error(err.Error())
 	}
-	return nil
+	return err
 }
 
 func (s *storage) DeleteData(ctx context.Context, login string, dataKeyWord string) error {
-	return nil
+	_, err := s.pgxPool.Exec(ctx, deleteData, login, dataKeyWord)
+	if err != nil {
+		s.log.Error(err.Error())
+	}
+	return err
 }
 
 func (s *storage) Close() {
