@@ -40,8 +40,8 @@ var (
 	selectData = `SELECT dataKeyWord, dataType, data, metadata 
 				  FROM dataTable
 				  WHERE login = $1 AND dataKeyWord = $2`
-	updateData = `UPDATE dataTable SET data = $1, meatadata = $2
-				  WHERE login = $1 AND dataKeyWord = $2`
+	updateData = `UPDATE dataTable SET data = $1, metadata = $2
+				  WHERE login = $3 AND dataKeyWord = $4`
 	deleteData = `DELETE FROM dataTable WHERE login = $1 AND dataKeyWord = $2`
 )
 
@@ -64,7 +64,7 @@ func NewStorage(ctx context.Context, log *logrus.Logger,
 		log.Error(err.Error())
 		return nil, err
 	}
-	log.Info("Запустили соединение с Postgres, инициализировали таблицы")
+	log.Debug("Запустили соединение с Postgres, инициализировали таблицы")
 
 	return &storage{
 		pgxPool: pool,
@@ -155,20 +155,26 @@ func (s *storage) GetData(ctx context.Context, login string,
 		s.log.Error(err.Error())
 		return nil, err
 	}
+	if data == nil {
+		err := model.ErrNoRowsSelected
+		s.log.Error(err.Error())
+		return nil, err
+	}
 	s.log.Debug("Данные успешно выбраны")
 	return data, nil
 }
 
 // ChangeData запускает UPDATE на данные пользователя
 func (s *storage) ChangeData(ctx context.Context, data model.DataBlock) error {
-	_, err := s.pgxPool.Exec(ctx, insertData, data.Login, data.DataKeyWord,
-		data.DataType, data.CipherData, data.MetaData)
+	_, err := s.pgxPool.Exec(ctx, updateData, data.CipherData, data.MetaData,
+		data.Login, data.DataKeyWord)
 	if err != nil {
 		s.log.Error(err.Error())
 	}
 	return err
 }
 
+// DeleteData удаляет данные пользователя по ключу
 func (s *storage) DeleteData(ctx context.Context, login string, dataKeyWord string) error {
 	_, err := s.pgxPool.Exec(ctx, deleteData, login, dataKeyWord)
 	if err != nil {

@@ -137,6 +137,7 @@ func (s *service) ChangeData(ctx context.Context, dataForChange model.DataBlock)
 	return s.storage.ChangeData(ctx, dataForChange)
 }
 
+// DeleteData удаляет данные пользователя
 func (s *service) DeleteData(ctx context.Context, dataKeyWord string) error {
 
 	login, err := utils.GetLoginFromContext(ctx, s.config.SecretPassword)

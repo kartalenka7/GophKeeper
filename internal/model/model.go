@@ -29,7 +29,11 @@ type DataBlock struct {
 }
 
 var (
-	ErrLoginNotFound = errors.New("Login not found")
-	ErrTokenNotFound = errors.New("Token not found")
-	ErrNotValidToken = errors.New("Not valid token")
+	ErrLoginNotFound   = errors.New("Login not found")
+	ErrTokenNotFound   = errors.New("Token not found")
+	ErrNotValidToken   = errors.New("Not valid token")
+	ErrNoRowsSelected  = errors.New("No rows selected")
+	ErrUniqueViolation = errors.New("Login unique violation")
+	ErrUserNotFound    = errors.New("User not found")
+	ErrUserRegister    = errors.New("error in user registration")
 )

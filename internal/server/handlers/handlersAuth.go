@@ -27,7 +27,7 @@ type HandlersAuth struct {
 	log     *logrus.Logger
 }
 
-// NewHandlerAuth
+// NewHandlerAuth возвращает структуру для операций с хэндлерами
 func NewHandlersAuth(service Service, log *logrus.Logger) *HandlersAuth {
 	h := &HandlersAuth{
 		service: service,
@@ -43,7 +43,7 @@ func (h HandlersAuth) UserRegister(ctx context.Context, in *auth.RegisterRequest
 
 	jwtString, err := h.service.UserRegister(ctx, in.Login, in.Password)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error in user registration")
+		return nil, status.Errorf(codes.Internal, model.ErrUserRegister.Error())
 	}
 
 	response.JwtToken = jwtString

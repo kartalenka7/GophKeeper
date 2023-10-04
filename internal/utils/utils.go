@@ -124,7 +124,6 @@ func GetLoginFromContext(ctx context.Context, secretPassword string) (string, er
 		return "", err
 	}
 	if !token.Valid {
-
 		return "", model.ErrNotValidToken
 	}
 	return tk.Login, nil
