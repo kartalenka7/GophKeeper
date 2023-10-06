@@ -3,9 +3,13 @@ package api
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"keeper/internal/model"
 )
@@ -36,10 +40,6 @@ func InitCLIApp(ctx context.Context, log *logrus.Logger, service Service) *cli.A
 				for {
 					var input string
 					fmt.Scanln(&input)
-					if err != nil {
-						log.Error(err.Error())
-						return err
-					}
 					switch input {
 					case "exit":
 						return nil
@@ -54,23 +54,31 @@ func InitCLIApp(ctx context.Context, log *logrus.Logger, service Service) *cli.A
 							return err
 						}
 					case "add":
-						err = add(ctx, log, service, jwtToken)
-						if err != nil {
+						if checkAuth(jwtToken, log) {
+							continue
+						}
+						if err = add(ctx, log, service, jwtToken); err != nil {
 							return err
 						}
 					case "get":
-						err = get(ctx, log, service, jwtToken)
-						if err != nil {
+						if checkAuth(jwtToken, log) {
+							continue
+						}
+						if err = get(ctx, log, service, jwtToken); err != nil {
 							return err
 						}
 					case "delete":
-						err = delete(ctx, log, service, jwtToken)
-						if err != nil {
+						if checkAuth(jwtToken, log) {
+							continue
+						}
+						if err = delete(ctx, log, service, jwtToken); err != nil {
 							return err
 						}
 					case "change":
-						err = change(ctx, log, service, jwtToken)
-						if err != nil {
+						if checkAuth(jwtToken, log) {
+							continue
+						}
+						if err = change(ctx, log, service, jwtToken); err != nil {
 							return err
 						}
 					default:
@@ -86,6 +94,14 @@ func InitCLIApp(ctx context.Context, log *logrus.Logger, service Service) *cli.A
 		},
 	}
 	return app
+}
+
+func checkAuth(jwtToken string, log *logrus.Logger) bool {
+	if jwtToken != "" {
+		return false
+	}
+	fmt.Println(model.ErrNoAuthentification.Error())
+	return true
 }
 
 func register(ctx context.Context, log *logrus.Logger,
@@ -106,7 +122,16 @@ func register(ctx context.Context, log *logrus.Logger,
 	}
 	jwtToken, err := service.Register(ctx, login, password)
 	if err != nil {
-		return "", err
+		if e, ok := status.FromError(err); ok {
+			switch e.Code() {
+			case codes.AlreadyExists:
+				fmt.Println(e.Message())
+				return "", nil
+			default:
+				log.Error(err.Error())
+				return "", err
+			}
+		}
 	}
 	fmt.Println("Регистрация успешна")
 	return jwtToken, nil
@@ -130,7 +155,16 @@ func auth(ctx context.Context, log *logrus.Logger,
 	}
 	jwtToken, err := service.Auth(ctx, login, password)
 	if err != nil {
-		return "", err
+		if e, ok := status.FromError(err); ok {
+			switch e.Code() {
+			case codes.Unauthenticated:
+				fmt.Println(e.Message())
+				return "", nil
+			default:
+				log.Error(err.Error())
+				return "", err
+			}
+		}
 	}
 	fmt.Println("Аутентификация успешна")
 	return jwtToken, nil
@@ -138,12 +172,15 @@ func auth(ctx context.Context, log *logrus.Logger,
 
 func add(ctx context.Context, log *logrus.Logger,
 	service Service, jwtToken string) error {
-	fmt.Println("Введите данные для добавления")
+	fmt.Println("Введите строку с данными для добавления или путь к файлу")
 	var data model.DataBlock
 	_, err := fmt.Scanln(&data.Data)
 	if err != nil {
 		log.Error(err.Error())
 		return err
+	}
+	if strings.Contains(data.Data, `\`) {
+		data.Data, err = readFromFile(data.Data, log)
 	}
 	fmt.Println("Введите ключ для однозначной идентификации данных")
 	_, err = fmt.Scanln(&data.DataKeyWord)
@@ -163,7 +200,43 @@ func add(ctx context.Context, log *logrus.Logger,
 	if err != nil {
 		return err
 	}
+	fmt.Println("Данные успешно добавлены")
 	return nil
+}
+
+func readFromFile(fileName string, log *logrus.Logger) (string, error) {
+
+	// Открываем файл для чтения.
+	file, err := os.OpenFile(fileName, os.O_RDONLY, 0666)
+	if err != nil {
+		log.Fatalf("Ошибка при открытии файла: %v", err)
+	}
+	defer file.Close()
+
+	// Определяем размер файла.
+	fileInfo, err := file.Stat()
+	if err != nil {
+		log.Error(err.Error())
+		return "", err
+	}
+	fileSize := fileInfo.Size()
+	if fileSize > 3072 {
+		err = model.ErrBigFile
+		log.Error(err.Error())
+		return "", err
+	}
+
+	// Создаем буфер для чтения данных из файла.
+	data := make([]byte, fileSize)
+
+	// Читаем данные из файла в буфер.
+	_, err = file.Read(data)
+	if err != nil {
+		log.Error(err.Error())
+		return "", err
+	}
+
+	return string(data), err
 }
 
 func get(ctx context.Context, log *logrus.Logger,

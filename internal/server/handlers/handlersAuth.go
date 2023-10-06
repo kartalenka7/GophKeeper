@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"keeper/internal/model"
 	auth "keeper/internal/server/handlers/proto/authService"
 
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgerrcode"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -40,9 +43,15 @@ func NewHandlersAuth(service Service, log *logrus.Logger) *HandlersAuth {
 func (h HandlersAuth) UserRegister(ctx context.Context, in *auth.RegisterRequest) (
 	*auth.RegisterResponse, error) {
 	var response auth.RegisterResponse
-
+	h.log.Debug("Хэндлер для регистрации пользователя")
 	jwtString, err := h.service.UserRegister(ctx, in.Login, in.Password)
 	if err != nil {
+		var pgxError *pgconn.PgError
+		if errors.As(err, &pgxError) {
+			if pgxError.Code == pgerrcode.UniqueViolation {
+				return nil, status.Errorf(codes.AlreadyExists, model.ErrUserAlreadyExists.Error())
+			}
+		}
 		return nil, status.Errorf(codes.Internal, model.ErrUserRegister.Error())
 	}
 
@@ -55,10 +64,10 @@ func (h HandlersAuth) UserRegister(ctx context.Context, in *auth.RegisterRequest
 func (h HandlersAuth) UserAuth(ctx context.Context, in *auth.AuthRequest) (
 	*auth.AuthResponse, error) {
 	var response auth.AuthResponse
-	h.log.Info("Хэндлер для аутентификации пользователя")
+	h.log.Debug("Хэндлер для аутентификации пользователя")
 	jwtString, err := h.service.UserAuthentification(ctx, in.Login, in.Password)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "error in user authentification")
+		return nil, status.Errorf(codes.Unauthenticated, model.ErrUserAuth.Error())
 	}
 	response.JwtToken = jwtString
 	return &response, nil

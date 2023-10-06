@@ -41,9 +41,14 @@ func (s *service) Register(ctx context.Context, login string, password string) (
 	// в response добавить jwt токен
 	resp, err := client.UserRegister(ctx, requestRegister)
 	if err != nil {
-		s.log.Error(err.Error())
+		return "", err
 	}
 	return resp.JwtToken, err
+}
+
+type RPCError struct {
+	Code    int
+	Message string
 }
 
 func (s *service) Auth(ctx context.Context, login string, password string) (string, error) {
@@ -60,11 +65,10 @@ func (s *service) Auth(ctx context.Context, login string, password string) (stri
 		Login:    login,
 		Password: password,
 	}
-
 	// в response добавить jwt токен
 	resp, err := client.UserAuth(ctx, requestAuth)
 	if err != nil {
-		s.log.Error(err.Error())
+		return "", err
 	}
 	return resp.JwtToken, err
 }

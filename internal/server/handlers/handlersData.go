@@ -29,7 +29,7 @@ func NewHandlersData(service Service, log *logrus.Logger) *HandlersData {
 // AddData - хэндлер для добавления новых данных для хранения
 func (h HandlersData) AddData(ctx context.Context, in *data.AddingRequest) (
 	*emptypb.Empty, error) {
-	h.log.Info("Хэндлер для добавления данных")
+	h.log.Debug("Хэндлер для добавления данных")
 
 	data := model.DataBlock{
 		DataKeyWord: in.DataKeyWord,
@@ -47,7 +47,7 @@ func (h HandlersData) AddData(ctx context.Context, in *data.AddingRequest) (
 // GetData - хэндлер для получения данных пользователя
 func (h HandlersData) GetData(ctx context.Context, in *data.GetRequest) (
 	*data.GetResponseList, error) {
-	h.log.Info("Хэндлер для получения данных")
+	h.log.Debug("Хэндлер для получения данных")
 	dataResponseList := &data.GetResponseList{}
 	var dataGetResponse data.GetResponse
 
@@ -68,7 +68,7 @@ func (h HandlersData) GetData(ctx context.Context, in *data.GetRequest) (
 // ChangeData - хэндлер для изменения существующих данных пользователя
 func (h HandlersData) ChangeData(ctx context.Context, in *data.ChangingRequest) (
 	*emptypb.Empty, error) {
-	h.log.Info("Хэндлер для изменения данных")
+	h.log.Debug("Хэндлер для изменения данных")
 	data := model.DataBlock{
 		DataKeyWord: in.DataKeyWord,
 		Data:        in.DataForChange,
@@ -84,7 +84,7 @@ func (h HandlersData) ChangeData(ctx context.Context, in *data.ChangingRequest) 
 // DeleteData - хэндлер для удаления данных
 func (h HandlersData) DeleteData(ctx context.Context, in *data.DeletionRequest) (
 	*emptypb.Empty, error) {
-	h.log.Info("Хэндлер для удаления данных")
+	h.log.Debug("Хэндлер для удаления данных")
 
 	if err := h.service.DeleteData(ctx, in.DataKeyWord); err != nil {
 		return &emptypb.Empty{}, status.Errorf(codes.Internal, err.Error())
