@@ -118,7 +118,6 @@ func (s *service) Get(ctx context.Context, jwtToken string, dataKeyWord string) 
 
 	responseList, err := client.GetData(ctx, requestGet)
 	if err != nil {
-		s.log.Error(err.Error())
 		return nil, err
 	}
 

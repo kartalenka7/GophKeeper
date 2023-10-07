@@ -40,4 +40,5 @@ var (
 	ErrUserAuth           = errors.New("Неправильный логин или пароль")
 	ErrNoAuthentification = errors.New("Сначала пройдите регистрацию или аутентификацию")
 	ErrBigFile            = errors.New("Слишком большой файл")
+	ErrIncorrectPassword  = errors.New("incorrect login or password")
 )

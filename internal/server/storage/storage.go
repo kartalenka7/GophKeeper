@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"keeper/internal/model"
 	"time"
@@ -111,7 +110,7 @@ func (s *storage) CheckUserAuth(ctx context.Context, login string,
 	inputPasswordHash := sha256.Sum256([]byte(password))
 
 	if hex.EncodeToString(inputPasswordHash[:]) != hex.EncodeToString(hashPassword) {
-		err = errors.New(`incorrect password`)
+		err = model.ErrIncorrectPassword
 		s.log.Error(err.Error())
 		return err
 	}

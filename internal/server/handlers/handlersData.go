@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"keeper/internal/model"
 	data "keeper/internal/server/handlers/proto/dataService"
 
@@ -53,6 +54,9 @@ func (h HandlersData) GetData(ctx context.Context, in *data.GetRequest) (
 
 	data, err := h.service.GetData(ctx, in.DataKeyWord)
 	if err != nil {
+		if errors.Is(err, model.ErrNoRowsSelected) {
+			return nil, status.Error(codes.NotFound, model.ErrNoRowsSelected.Error())
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

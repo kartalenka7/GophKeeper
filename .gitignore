@@ -1,4 +1,5 @@
-*.exe
+mockery.exe
+main.exe
 
 *.pb.go
 

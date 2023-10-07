@@ -52,7 +52,7 @@ func (h HandlersAuth) UserRegister(ctx context.Context, in *auth.RegisterRequest
 				return nil, status.Errorf(codes.AlreadyExists, model.ErrUserAlreadyExists.Error())
 			}
 		}
-		return nil, status.Errorf(codes.Internal, model.ErrUserRegister.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	response.JwtToken = jwtString
@@ -67,7 +67,10 @@ func (h HandlersAuth) UserAuth(ctx context.Context, in *auth.AuthRequest) (
 	h.log.Debug("Хэндлер для аутентификации пользователя")
 	jwtString, err := h.service.UserAuthentification(ctx, in.Login, in.Password)
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, model.ErrUserAuth.Error())
+		if errors.Is(err, model.ErrIncorrectPassword) {
+			return nil, status.Errorf(codes.Unauthenticated, model.ErrUserAuth.Error())
+		}
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 	response.JwtToken = jwtString
 	return &response, nil

@@ -132,6 +132,8 @@ func register(ctx context.Context, log *logrus.Logger,
 				return "", err
 			}
 		}
+		log.Error(err.Error())
+		return "", err
 	}
 	fmt.Println("Регистрация успешна")
 	return jwtToken, nil
@@ -165,6 +167,8 @@ func auth(ctx context.Context, log *logrus.Logger,
 				return "", err
 			}
 		}
+		log.Error(err.Error())
+		return "", err
 	}
 	fmt.Println("Аутентификация успешна")
 	return jwtToken, nil
@@ -250,6 +254,17 @@ func get(ctx context.Context, log *logrus.Logger,
 	}
 	data, err := service.Get(ctx, jwtToken, keyWord)
 	if err != nil {
+		if e, ok := status.FromError(err); ok {
+			switch e.Code() {
+			case codes.NotFound:
+				fmt.Println(e.Message())
+				return nil
+			default:
+				log.Error(err.Error())
+				return err
+			}
+		}
+		log.Error(err.Error())
 		return err
 	}
 	fmt.Printf("Сохраненные данные: %s\n", data)
