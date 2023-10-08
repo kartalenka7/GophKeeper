@@ -24,7 +24,7 @@ func TestStorageAddUser(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name:     "Успешное добавление пользователя",
-			login:    "user13",
+			login:    "user17",
 			password: "123456",
 			wantErr:  false,
 		},
