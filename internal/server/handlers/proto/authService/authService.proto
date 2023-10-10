@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package authservice;
+
+option go_package = "proto/authservice";
+
+message RegisterRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message RegisterResponse {
+    string jwtToken = 1;
+}
+
+message AuthRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message AuthResponse {
+    string jwtToken = 1;
+}
+
+service AuthService {
+    rpc UserRegister(RegisterRequest) returns (RegisterResponse);
+    rpc UserAuth(AuthRequest) returns (AuthResponse);
+}

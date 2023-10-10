@@ -25,7 +25,7 @@ func TestGenerateJWTToken(t *testing.T) {
 		{
 			"Успешное создание JWT токена",
 			"user1",
-			logger.InitLog(),
+			logger.InitLog(logrus.InfoLevel),
 			false,
 		},
 	}
@@ -41,17 +41,15 @@ func TestGenerateJWTToken(t *testing.T) {
 			}
 			require.NotEmpty(t, jwtString)
 
-			tk := &model.Token{}
-			token, err := jwt.ParseWithClaims(jwtString, tk, func(token *jwt.Token) (interface{}, error) {
+			tk := model.Token{}
+			token, err := jwt.ParseWithClaims(jwtString, &tk, func(token *jwt.Token) (interface{}, error) {
 				return []byte(goprivate), nil
 			})
 			require.NoError(t, err)
 			require.True(t, token.Valid)
-			claims, ok := token.Claims.(jwt.MapClaims)
-			if ok {
-				retLogin := claims["login"].(string)
-				require.Equal(t, tt.login, retLogin)
-			}
+
+			require.Equal(t, tt.login, tk.Login)
+
 		})
 	}
 }
@@ -86,7 +84,7 @@ func TestGCMDataCipher(t *testing.T) {
 		{
 			name:    "Успешное шифрование",
 			data:    "little gopher",
-			log:     logger.InitLog(),
+			log:     logger.InitLog(logrus.InfoLevel),
 			wantErr: false,
 		},
 	}
@@ -108,6 +106,15 @@ func TestGCMDataCipher(t *testing.T) {
 
 func TestGetLoginFromContext(t *testing.T) {
 
+	goprivate, exist := os.LookupEnv("GOPRIVATE")
+	require.True(t, exist)
+	require.NotEmpty(t, goprivate)
+
+	log := logger.InitLog(logrus.InfoLevel)
+
+	jwtString, err := GenerateJWTToken("user1", log, goprivate)
+	require.NoError(t, err)
+
 	tests := []struct {
 		name    string
 		login   string
@@ -118,7 +125,7 @@ func TestGetLoginFromContext(t *testing.T) {
 			name:  "Контекст с логином в метаданных",
 			login: "user1",
 			ctx: metadata.NewIncomingContext(context.Background(),
-				metadata.New(map[string]string{"login": "user1"})),
+				metadata.Pairs("token", jwtString)),
 			wantErr: false,
 		},
 		{
@@ -127,14 +134,78 @@ func TestGetLoginFromContext(t *testing.T) {
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			retLogin, err := GetLoginFromContext(tt.ctx)
+
+			login, err := GetLoginFromContext(tt.ctx, goprivate)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetLoginFromContext() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			assert.Equal(t, tt.login, retLogin)
+			assert.Equal(t, login, tt.login)
+		})
+	}
+}
+
+func TestPrepareAESGCM(t *testing.T) {
+
+	tests := []struct {
+		name           string
+		log            *logrus.Logger
+		secretPassword string
+		wantErr        bool
+	}{
+		// TODO: Add test cases.
+		{
+			name:           "Подготовка режима AES-256 GCM",
+			log:            logger.InitLog(logrus.InfoLevel),
+			secretPassword: os.Getenv("GOPRIVATE"),
+			wantErr:        false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			aesGCM, vector, err := prepareAESGCM(tt.log, tt.secretPassword)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("prepareAESGCM() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.NotEmpty(t, aesGCM)
+			assert.NotEmpty(t, vector)
+		})
+	}
+}
+
+func TestGCMDataDecipher(t *testing.T) {
+	tests := []struct {
+		name    string
+		data    string
+		log     *logrus.Logger
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name:    "Успешное шифрование",
+			data:    "little gopher",
+			log:     logger.InitLog(logrus.InfoLevel),
+			wantErr: false,
+		},
+	}
+
+	secretPassword := os.Getenv("GOPRIVATE")
+	require.NotEmpty(t, secretPassword)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cipherData, err := GCMDataCipher(tt.data, secretPassword, tt.log)
+			require.NoError(t, err)
+			data, err := GCMDataDecipher(cipherData, secretPassword, tt.log)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GCMDataDecipher() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, data, tt.data)
 		})
 	}
 }

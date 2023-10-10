@@ -29,6 +29,16 @@ type DataBlock struct {
 }
 
 var (
-	ErrLoginNotFound = errors.New("Login not found")
-	ErrNotValidToken = errors.New("Not valid token")
+	ErrLoginNotFound      = errors.New("Login not found")
+	ErrTokenNotFound      = errors.New("Token not found")
+	ErrNotValidToken      = errors.New("Not valid token")
+	ErrNoRowsSelected     = errors.New("No rows selected")
+	ErrUniqueViolation    = errors.New("Login unique violation")
+	ErrUserNotFound       = errors.New("User not found")
+	ErrUserRegister       = errors.New("error in user registration")
+	ErrUserAlreadyExists  = errors.New("Пользователь уже существует, придумайте другой логин")
+	ErrUserAuth           = errors.New("Неправильный логин или пароль")
+	ErrNoAuthentification = errors.New("Сначала пройдите регистрацию или аутентификацию")
+	ErrBigFile            = errors.New("Слишком большой файл")
+	ErrIncorrectPassword  = errors.New("incorrect login or password")
 )
